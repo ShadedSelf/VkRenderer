@@ -1,0 +1,91 @@
+#version 460
+#extension GL_ARB_separate_shader_objects : enable
+#include "structures.glsl"
+#include "globals.glsl"
+#include "quaternions.glsl"
+#include "sampling.glsl"
+#include "debounce.glsl"
+
+layout (set = 0, binding = 0, rgba8) uniform image2D render;
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+Ray ray(vec3 ro, vec3 rd)
+{
+	Ray res;
+	res.ro = ro;
+	res.rd = rd;
+	return res;
+}
+
+vec3 polar2cartesian(float theta, float phi)
+{
+	float xtheta = cos(theta);
+	float ytheta = sin(theta);
+
+	float xphi = cos(phi);
+	float yphi = sin(phi);
+
+	return vec3(xtheta * xphi, ytheta * yphi, yphi);
+}
+
+void initRays(vec2 uv, out Ray ray, out vec3 planePos)
+{
+	ray.ro = cameraPos;
+	vec3 right = cam.right;
+	vec3 up = qMulVec(UP, createRotation(right, cam.up.x));
+	vec3 fw = cross(right, up);
+	planePos = (ray.ro + fw + (right * uv.x + up * uv.y));
+	ray.rd = normalize(planePos - ray.ro);
+
+
+	// ray.ro = cam.pos;
+	// vec3 right = cam.right;
+	// vec3 up = qMulVec(UP, createRotation(right, cam.up.x));
+	// vec3 fw = qMulVec(cam.fw, createRotation(up, uv.x * PI));
+
+	// right = cross(fw, up);
+	// fw = qMulVec(fw, createRotation(right, uv.y * PI));
+
+	// planePos = ray.ro + fw;
+	// ray.rd = normalize(planePos - ray.ro);
+}
+
+void main()
+{
+	ivec2 dim = imageSize(render);
+	vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(dim.xy);
+	vec2 screen = (uv - .5);
+	screen *= 2.0;
+    screen.y *= (dim.y / dim.x);
+
+	Ray mainRay;
+	pixelID = gl_GlobalInvocationID.x + dim.x * gl_GlobalInvocationID.y;
+
+	cameraPos = cam.pos;
+	cameraDir = cam.fw;
+	vec3 planePos;
+	initRays(screen, mainRay, planePos);
+
+	// vec3 fP = mainRay.ro + mainRay.rd * 3.0;
+	// vec2 tri = get(pixelID + dim.x * dim.y * frame);
+	// const float aperture = 0.0;
+	// vec3 rO = mainRay.ro + (cam.right * tri.x * aperture) + (qMulVec(UP, createRotation(cam.right, cam.up.x)) * tri.y * aperture);
+	// mainRay.ro = rO;
+	// mainRay.rd = normalize(fP - rO);
+
+	// mainRay.rd += randomSphereDirection(ihash(int(pixelID + dim.x * dim.y * frame * 8))) * 0.002;
+	// mainRay.rd = normalize(mainRay.rd);
+
+	Bounce self;
+
+	encodeRay(self, mainRay);
+	encodeFrame(self, 0);
+	encodeColor(self, ONE);
+	encodeIsDone(self, false);
+	encodeBounceCount(self, 0);
+
+	bo.data[pixelID] = self;
+	ra.data[pixelID] = mainRay;
+	acc.data[pixelID] = vec4(0.0);
+}

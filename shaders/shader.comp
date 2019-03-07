@@ -1,0 +1,333 @@
+#version 460
+#extension GL_ARB_separate_shader_objects : enable
+#include "structures.glsl"
+#include "roots.glsl"
+#include "primitives.glsl"
+#include "globals.glsl"
+#include "init.glsl"
+#include "sampling.glsl"
+#include "intersect.glsl"
+#include "debounce.glsl"
+
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout (set = 0, binding = 0, rgba8) uniform image2D render;
+layout (set = 0, binding = 1, rgba8) uniform image2D test;
+
+layout (set = 3, binding = 0) uniform sampler2D testT;
+
+Ray ray(vec3 ro, vec3 rd)
+{
+	Ray res;
+	res.ro = ro;
+	res.rd = rd;
+	return res;
+}
+
+vec2 addRoots(vec2 s0, vec2 s1)
+{
+	if ((isinf(s1.x) && !isinf(s0.x))/* || s1.x < 0.0*/)
+		return s0;
+	if ((isinf(s0.x) && !isinf(s1.x))/* || s0.x < 0.0*/)
+		return s1;
+	vec2 res;
+
+	// Outside both
+	if (s0.y > 0.0 && s1.y > 0.0)
+	{
+		res.x = min(s0.x, s1.x);
+		res.y = max(s0.y, s1.y);
+		return res;
+	}
+
+	// Inside both
+	if (s0.y < 0.0 && s1.y < 0.0)
+	{
+		res.x = max(s0.x, s1.x);
+		res.y = min(s0.y, s1.y);
+		// if (s1.x < 0.0 && s0.x > 0.0)
+		// {
+		// 	if (s1.x > s0.y && s1.y < s0.y)
+		// 		res.y = s1.y;
+		// 	else
+		// 		res.y = s0.y;
+		// }
+		// if (s0.x < 0.0 && s1.x > 0.0)
+		// {
+		// 	if (s0.x > s1.y && s0.y < s1.y)
+		// 		res.y = s0.y;
+		// 	else
+		// 		res.y = s1.y;
+		// }
+		return res;
+	}
+
+	// Inside 0
+	if (s0.y < 0.0 && s1.y > 0.0)
+	{
+		res = s0;
+		if (s1.x < s0.x && s1.y > s0.x)
+		{
+			res.x = s1.y;
+			// res.y = -1.0;
+		}
+		// res.y = 0;
+		return res;
+	}
+
+	// Inside 1
+	if (s1.y < 0.0 && s0.y > 0.0)
+	{
+		res = s1;
+		if (s0.x < s1.x && s0.y > s1.x)
+		{
+			res.x = s0.y;
+			// res.y = -1.0;
+		}
+		return res;
+	}
+}
+
+
+vec2 cutRoots(vec2 form, vec2 cutter)
+{
+	vec2 res = form;
+
+	// if (isinf(form.x))
+	// 	return vec2(INFINITY);
+	// if (isinf(cutter.x) || cutter.x < 0.0)
+	// 	return form;
+
+	// Both outside
+	if (cutter.y > 0.0 && form.y > 0.0)
+	{
+		if (cutter.x < form.x && cutter.y > form.x)
+			res.x = (cutter.y > form.y) ? INFINITY : cutter.y;
+		if (cutter.x < form.y)
+			res.y = cutter.x;
+		return res;
+	}
+
+	// Both inside
+	if (cutter.y < 0.0 && form.y < 0.0)
+	{
+		if (cutter.x < 0.0 && cutter.y > form.y)
+		{
+			res.y = cutter.y;
+			return res;
+		}
+		if (cutter.x < 0.0)
+			return form;
+		if (cutter.x < form.x)
+		{
+			res.x = cutter.x;
+			res.y = form.x;
+			return res;
+		}
+		return vec2(INFINITY);
+	}
+
+	// Inside cutter
+	if (cutter.y < 0.0 && form.y > 0.0)
+	{
+		if (form.x > cutter.x)
+			return res;
+		if (cutter.x < form.y)
+		{
+			res.x = cutter.x;
+			return res;
+		}
+		return vec2(INFINITY);
+	}
+
+	// Inside form
+	if (cutter.y > 0.0 && form.y < 0.0)
+	{
+		if (cutter.x < form.x)
+		{
+			res.x = cutter.x;
+			// res.y = -1.0;
+		}
+	}
+	return res;
+}
+
+float minPos(vec2 a)
+{
+	a.x = a.x < Epsilon ? INFINITY : a.x;
+	a.y = a.y < Epsilon ? INFINITY : a.y;
+	return min(a.x, a.y);
+}
+
+float minPos(float a, float b)
+{
+	a = a < Epsilon ? INFINITY : a;
+	b = b < Epsilon ? INFINITY : b;
+	return min(a, b);
+}
+
+vec2 add(vec2 s0, vec2 s1, vec3 s0xN, vec3 s0yN, vec3 s1xN, vec3 s1yN, out vec3 n)
+{
+	if ((isinf(s1.x) && !isinf(s0.x)) || s1.x < 0.0)
+	{
+		n = s0xN * sign(s0.y);
+		return s0;
+	}
+	if ((isinf(s0.x) && !isinf(s1.x)) || s0.x < 0.0)
+	{
+		n = s1xN * sign(s1.y);
+		return s1;
+	}
+	vec2 res;
+
+	// Outside both
+	if (s0.y > 0.0 && s1.y > 0.0)
+	{
+		res.x = min(s0.x, s1.x);
+		res.y = max(s0.y, s1.y);
+		res.y = 1.0;
+		n = ((s0.x < s1.x) ? s0xN : s1xN);
+		return res;
+	}
+
+	// Inside both
+	if (s0.y < 0.0 && s1.y < 0.0)
+	{
+		res.x = max(s0.x, s1.x);
+		res.y = max(s0.y, s1.y);
+		res.y = -1.0;
+		n = ((s0.x > s1.x) ? -s0xN : -s1xN);
+		return res;
+	}
+
+	// Inside 0
+	if (s0.y < 0.0 && s1.y > 0.0)
+	{
+		res = s0;
+		n = -s0xN;
+		if (s1.x < s0.x && s1.y > s0.x)
+		{
+			res.x = s1.y;
+			res.y = -1.0;
+			n = -s1yN;
+		}
+		return res;
+	}
+
+	// Inside 1
+	if (s0.y > 0.0 && s1.x > 0.0)
+	{
+		res = s1;
+		n = -s1xN;
+		if (s0.x < s1.x && s0.y > s1.x)
+		{
+			res.x = s0.y;
+			res.y = -1.0;
+			n = -s0yN;
+		}
+		return res;
+	}
+}
+
+Ray interact(Ray mainRay, Material mat, bool inside, vec3 n, float t)
+{
+	float fresnel = ff(!inside ? 1.0 : mat.refractionIndex, !inside ? mat.refractionIndex : 1.0, n, mainRay.rd, mat.reflectance);
+	float reflectionBrach = step(randMe(), fresnel);
+
+	vec3 refractionVec = refract(mainRay.rd, n, !inside ? 1.0 / mat.refractionIndex : mat.refractionIndex / 1.0);
+	vec3 reflectionVec = reflect(mainRay.rd, n);
+	vec3 cosineVec = cosineDirection(n);
+	// cosineVec = mix(cosineVec, getConeSample(n, mat.roughness), 1.0 - mat.roughness);
+	// cosineVec = mix(reflectionVec, cosineVec, fresnel);
+
+	if (length(refractionVec) < 0.5)
+	{
+		reflectionBrach = 1;
+		refractionVec = reflectionVec;
+	}
+
+	reflectionVec = normalize(mix(reflectionVec, cosineVec, mat.roughness));
+	refractionVec = normalize(mix(refractionVec, -cosineVec, mat.roughness));
+
+	vec3 refRo = (mainRay.ro + mainRay.rd * t) + n * Epsilon * mix(-1.0, 1.0, reflectionBrach) * 2.0;
+	vec3 refRd = mix(refractionVec, reflectionVec, reflectionBrach);
+
+	Ray res;
+	res.ro = refRo;
+	res.rd = refRd;
+	return res;
+}
+
+void main()
+{
+	ivec2 dim = imageSize(render);
+	vec2 uv = vec2(gl_GlobalInvocationID.xy) / vec2(dim.xy);
+	vec2 screen = (uv - 0.5);
+	screen *= 2.0;
+    screen.y *= (dim.y / dim.x);
+	init();
+
+	Ray mainRay;
+	pixelID = gl_GlobalInvocationID.x + dim.x * gl_GlobalInvocationID.y;
+	iSeed = pixelID * 2000 * 2000 * (frame + 1);
+	Bounce self = bo.data[pixelID];
+
+
+	mainRay = decodeRay(self);
+	// iSeed = decodeFrame(self);
+
+	Hit hit;
+	vec3 lum = decodeColor(self);
+	float t = intersect(mainRay, hit);
+	vec3 final = ZERO;
+	bool end = false;
+	float d = 0.0;
+
+	if (!isinf(t))
+	{
+		if (hit.mat.reflectance < 0.0)
+		{
+			end = true;
+			final = lum * hit.mat.color;
+		}
+		else
+		{
+			if (hit.inside) //and previously transparent
+				lum *= mix(ONE, saturate(hit.insideMat.color), saturate(t * 0.4));
+
+			lum *= mix(ONE, saturate(hit.mat.color), saturate(hit.mat.roughness)) * mix(0.95, 0.75, hit.mat.roughness);
+			mainRay = interact(mainRay, hit.mat, hit.inside, hit.normal, t);
+
+			encodeBounceCount(self, decodeBounceCount(self) + 1);
+			encodeColor(self, lum);
+			encodeRay(self, ray(mainRay.ro, mainRay.rd));
+		}
+
+		if (length(lum) < 0.01)
+			end = true;
+	}
+	else
+		end = true;
+
+	if (end)
+	{
+		encodeIsDone(self, true); //not used
+		encodeFrame(self, decodeFrame(self) + 1);
+
+		vec3 col = acc.data[pixelID].xyz;
+		acc.data[pixelID] = vec4(mix(col, final, 1.0 / float(decodeFrame(self))), 1.0);
+		// acc.data[pixelID] = vec4(mix(col, final, 0.05), 1.0);
+
+		encodeColor(self, ONE);
+		encodeBounceCount(self, 0);
+
+		Ray tmp = ra.data[pixelID];
+		tmp.rd += randomSphereDirection() * 0.002;
+		tmp.rd = normalize(tmp.rd);
+		encodeRay(self, tmp);
+	}
+
+	bo.data[pixelID] = self;
+	imageStore(render, ivec2(gl_GlobalInvocationID.xy), acc.data[pixelID]);
+	// imageStore(render, ivec2(gl_GlobalInvocationID.xy), vec4(float(decodeFrame(self)) / float(frame)));
+}
