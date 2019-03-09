@@ -9,61 +9,58 @@
 #include <RenderTexture.hpp>
 #include <Descriptors.hpp>
 
+struct BufferTrack
+{
+	BufferType type;
+	uint32_t count;
+	BufferTrack(BufferType type, uint32_t count)
+	{
+		this->type = type;
+		this->count = count;
+	}
+};
 
 class BindableBuffers
 {
 	private:
 		Initter *init;
 		std::vector<std::shared_ptr<BindableObject>> buffers;
+		std::vector<BufferTrack> diffBuffers;
 
-		std::vector<std::pair<VkDescriptorType, uint32_t>> diffBuffers;
-		std::vector<std::vector<uint32_t>> indices;
+		void Add(BindableObject *buff, std::string name, BufferType type, u_int32_t binding);
 
 	public:
-		// BindableBuffers(){}
 		BindableBuffers(Initter *init)
 		{
 			this->init = init;
 		}
 
-		void AddUniformBuffer(std::string name, uint32_t size, uint32_t dSetIndex, u_int32_t binding)
+		void AddBuffer(std::string name, uint32_t size, BufferType type, u_int32_t binding, bool map = false)
 		{
-			Buffer *buff = new Buffer(init, name, dSetIndex, binding, size, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-			
-			buff->cType = cBuffer;
-			buff->Map();
-			buffers.push_back(std::shared_ptr<BindableObject>(buff));
+			Buffer *buff = new Buffer(init, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			buff->buffer = true;
+			if (map)
+				buff->Map();
+			Add(buff, name, type, binding);
+		}
 
-			bool br = false;
-			for (uint32_t i = 0; i < diffBuffers.size(); i++)
-			{
-				if (diffBuffers[i].first == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-				{
-					diffBuffers[i].second++;
-					br = true;
-					return;
-				}
-			}
-			if (!br)
-				diffBuffers.push_back(std::pair(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1));
+		void AddTexture(std::string name, uint32_t width, u_int32_t height, BufferType type, u_int32_t binding)
+		{
+			RenderTexture *buff = new RenderTexture(init, width, height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+			buff->buffer = false;
+			Add(buff, name, type, binding);
+		}
 
-			if (dSetIndex >= indices.size())
-				indices.resize(dSetIndex + 1);
-			if (!indices[dSetIndex].size())
-			{
-				std::vector<uint32_t> tmp;
-				tmp.push_back(buffers.size() - 1);
-				indices.insert(indices.begin() + dSetIndex, tmp);
-			}
-			else
-				indices[dSetIndex].push_back(buffers.size() - 1);
+		void AddTexture(std::string name, BufferType type, u_int32_t binding, RenderTexture tex)
+		{
+			RenderTexture *buff = new RenderTexture(tex);
+			Add(buff, name, type, binding);
+		}
 
-	}
-		Buffer *GetUniformBuffer(std::string name)
+		Buffer *GetBuffer(std::string name)
 		{
 			for (uint32_t i = 0; i < buffers.size(); i++) 
-				if (buffers[i]->name == name && buffers[i]->cType == cBuffer)
+				if (buffers[i]->name == name && buffers[i]->buffer)
 					return static_cast<Buffer *>(buffers[i].get());
 			return nullptr;
 		}
@@ -71,85 +68,99 @@ class BindableBuffers
 		void CreateDescriptors(std::vector<VkDescriptorSet> *dSets, std::vector<VkDescriptorSetLayout> *dSetLayouts, VkShaderStageFlagBits stage);
 };
 
-void BindableBuffers::CreateDescriptors(std::vector<VkDescriptorSet> *dSets, std::vector<VkDescriptorSetLayout> *dSetLayouts, VkShaderStageFlagBits stage) //shader stage here
+void BindableBuffers::Add(BindableObject *buff, std::string name, BufferType type, u_int32_t binding)
+{
+	buff->dType = type;
+	buff->name = name;
+	buff->binding = binding;
+
+	buffers.push_back(std::shared_ptr<BindableObject>(buff));
+	for (uint32_t i = 0; i < diffBuffers.size(); i++)
+	{
+		if (diffBuffers[i].type == type)
+		{
+			diffBuffers[i].count++;
+			return;
+		}
+	}
+	diffBuffers.push_back(BufferTrack(type, 1));
+}
+
+void BindableBuffers::CreateDescriptors(std::vector<VkDescriptorSet> *dSets, std::vector<VkDescriptorSetLayout> *dSetLayouts, VkShaderStageFlagBits stage)
 {
 
 	// Pool
 	VkDescriptorPoolSize *poolSize = new VkDescriptorPoolSize[diffBuffers.size()];
 	for (uint32_t i = 0; i < diffBuffers.size(); i++)
 	{
-		poolSize[i].type = diffBuffers[i].first;
-		poolSize[i].descriptorCount = diffBuffers[i].second;
+		poolSize[i].type = (VkDescriptorType)diffBuffers[i].type;
+		poolSize[i].descriptorCount = diffBuffers[i].count;
 	}
 
 	VkDescriptorPoolCreateInfo dPoolInfo = {};
 	dPoolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	dPoolInfo.maxSets = indices.size();
+	dPoolInfo.maxSets = 1;
 	dPoolInfo.poolSizeCount = diffBuffers.size();
 	dPoolInfo.pPoolSizes =	poolSize;
 	VkDescriptorPool dPool;
 	vkCreateDescriptorPool(init->device, &dPoolInfo, nullptr, &dPool);
 	delete[] poolSize;
 
-	// Layouts
-	for (uint32_t i = 0; i < indices.size(); i++)
+	// Layout
+	VkDescriptorSetLayoutBinding *layoutBindings = new VkDescriptorSetLayoutBinding[buffers.size()];
+	for	(uint32_t i = 0; i < buffers.size(); i++)
 	{
-		VkDescriptorSetLayoutBinding *layoutBindings = new VkDescriptorSetLayoutBinding[indices[i].size()];
-		for	(uint32_t j = 0; j < indices[i].size(); j++)
-		{
-			layoutBindings[i] = {};
-		    layoutBindings[i].binding = buffers[indices[i][j]]->binding;
-			layoutBindings[i].descriptorType = buffers[indices[i][j]]->dType;
-			layoutBindings[i].descriptorCount = 1;
-			layoutBindings[i].stageFlags = stage;
-		}
-
-		VkDescriptorSetLayoutCreateInfo layoutInfo = {};
-		layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-		layoutInfo.bindingCount = indices[i].size();
-		layoutInfo.pBindings = layoutBindings;
-
-		VkDescriptorSetLayout dSetLayout;
-		vkCreateDescriptorSetLayout(init->device, &layoutInfo, nullptr, &dSetLayout);
-		delete[] layoutBindings;
-		dSetLayouts->push_back(dSetLayout);
+		layoutBindings[i] = {};
+		layoutBindings[i].binding = buffers[i]->binding;
+		layoutBindings[i].descriptorType = (VkDescriptorType)buffers[i]->dType;
+		layoutBindings[i].descriptorCount = 1;
+		layoutBindings[i].stageFlags = stage;
 	}
+
+	VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+	layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	layoutInfo.bindingCount = buffers.size();
+	layoutInfo.pBindings = layoutBindings;
+
+	VkDescriptorSetLayout dSetLayout;
+	vkCreateDescriptorSetLayout(init->device, &layoutInfo, nullptr, &dSetLayout);
+	dSetLayouts->push_back(dSetLayout);
+	delete[] layoutBindings;
 	
-	// Sets
+	// Set
 	VkDescriptorSetAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	allocInfo.descriptorPool = dPool;
-	allocInfo.descriptorSetCount = indices.size(); 
-	allocInfo.pSetLayouts = dSetLayouts->data();
-	VkDescriptorSet *dSetsT = new VkDescriptorSet[indices.size()];
-	vkAllocateDescriptorSets(init->device, &allocInfo, dSetsT);
-	*dSets = std::vector<VkDescriptorSet>(dSetsT, dSetsT + indices.size()); // hmm
-	delete[] dSetsT;
+	allocInfo.descriptorSetCount = 1; 
+	allocInfo.pSetLayouts = &dSetLayout;
+	VkDescriptorSet dSetsT;;
+	vkAllocateDescriptorSets(init->device, &allocInfo, &dSetsT);
+	dSets->push_back(dSetsT);
 
 	VkWriteDescriptorSet *dWrite = new VkWriteDescriptorSet[buffers.size()];
 	for (uint32_t i = 0; i < buffers.size(); i++)
 	{
 		dWrite[i] = {};
 		dWrite[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		dWrite[i].dstSet = (*dSets)[buffers[i]->dSetIndex];
+		dWrite[i].dstSet = dSetsT;
 		dWrite[i].dstBinding = buffers[i]->binding;
 		dWrite[i].descriptorCount = 1;
-		dWrite[i].descriptorType = buffers[i]->dType;
-		if (buffers[i]->cType == cBuffer)
+		dWrite[i].descriptorType = (VkDescriptorType)buffers[i]->dType;
+
+		BindableObject *tmp = buffers[i].get();
+		if (buffers[i]->buffer)
 		{
-			BindableObject *tmp = buffers[i].get();
-			Buffer *tmp0 = static_cast<Buffer *>(tmp);
-			VkDescriptorBufferInfo asd = tmp0->info;
+			VkDescriptorBufferInfo asd = static_cast<Buffer *>(tmp)->info;
 			dWrite[i].pBufferInfo = &asd;
 		}
 		else
 		{
-			// std::vector<RenderTexture> b = (*static_cast<std::vector<RenderTexture> *>(container[i].vector));
-			// VkDescriptorImageInfo asd = b[i].info;
-			// dWrite[i].pImageInfo = &asd;
+			VkDescriptorImageInfo asd = static_cast<RenderTexture *>(tmp)->info;
+			dWrite[i].pImageInfo = &asd;
 		}
 	}
 	vkUpdateDescriptorSets(init->device, buffers.size(), dWrite, 0, nullptr);
+	delete[] dWrite;
 }
 
 

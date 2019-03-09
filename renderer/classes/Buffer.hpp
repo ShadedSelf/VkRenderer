@@ -23,14 +23,10 @@ class Buffer : public BindableObject
 		VkDeviceSize size;
 		VkDescriptorBufferInfo info;
 
-	Buffer (Initter *init, std::string name, uint32_t dSetIndex, uint32_t binding, VkDeviceSize size, VkDescriptorType dType, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
+	Buffer (Initter *init, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
 	{
 		this->init = init;
 		this->size = size;
-		this->name = name;
-		this->dSetIndex = dSetIndex;
-		this->binding = binding;
-		this->dType = dType;
 
 		Create(usage, properties);
 	}

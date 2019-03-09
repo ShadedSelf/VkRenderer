@@ -3,14 +3,20 @@
 
 #include <vulkan/vulkan.h>
 
-enum Type { cBuffer, cTexture };
+enum BufferType
+{
+	UniformBuffer  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	Storagebuffer  = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+	StorageTexture = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+	SamplerTexture = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+};
+
 class BindableObject 
 { 
     public:
-        Type cType;
-        VkDescriptorType dType;
+        bool buffer;
+        BufferType dType;
         std::string name;
-        u_int32_t dSetIndex;
 		uint32_t binding;
 
         uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, VkPhysicalDevice gpu);
