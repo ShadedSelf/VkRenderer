@@ -4,7 +4,7 @@ export VK_INSTANCE_LAYERS = VK_LAYER_LUNARG_standard_validation
 
 NAME = main
 
-INC = -I ${VK_SDK}/macos/include -I ./glfw/include -I ./glfw/deps -I ./renderer/headers -I ./renderer/includes -I ./renderer/classes -I ./renderer/src -I ./renderer/templates -I ./renderer/namespaces -I ./vectors
+INC = -I ${VK_SDK}/macos/include -I ./glfw/include -I ./glfw/deps -I ./renderer/helpers -I ./renderer/classes -I ./vectors -I ./camera
 SHADERS = ./shaders
 CC = g++-8 -std=c++17
 OB = ./obs
@@ -14,8 +14,8 @@ all:
 	@${VK_SDK}/macOS/bin/glslc -fshader-stage=fragment 	$(SHADERS)/shader.frag 	-o $(OB)/frag.spv -Werror
 	@${VK_SDK}/macOS/bin/glslc -fshader-stage=vertex 	$(SHADERS)/shader.vert 	-o $(OB)/vert.spv -Werror
 
-	@${VK_SDK}/macOS/bin/glslc -fshader-stage=compute 	$(SHADERS)/test.comp	-o $(OB)/test.spv -Werror
-	@#${VK_SDK}/macOS/bin/glslc -fshader-stage=compute 	$(SHADERS)/shader.comp	-o $(OB)/comp.spv -Werror
+	@${VK_SDK}/macOS/bin/glslc -fshader-stage=compute 	$(SHADERS)/set.comp		-o $(OB)/set.spv -Werror
+	@${VK_SDK}/macOS/bin/glslc -fshader-stage=compute 	$(SHADERS)/shader.comp	-o $(OB)/comp.spv -Werror
 
 
 	@$(CC) $(FLAGS) $(INC) -o $(OB)/testmain.cpp.o -c testmain.cpp

@@ -17,8 +17,6 @@ struct RecorderParams
 	VkExtent2D extent;
 };
 
-vk::CommandBuffer AllocateCommandBuffer(vk::Device device, vk::CommandPool cmdPool);
-
 VkCommandBuffer AllocateCommandBuffer(VkDevice device, VkCommandPool cmdPool);
 VkCommandBuffer BeginTemporaryCmdBuffer(VkDevice device, VkCommandPool cmdPool);
 void EndTemporaryCmdBuffer(VkDevice device, VkCommandPool cmdPool, VkQueue queue, VkCommandBuffer commandBuffer);

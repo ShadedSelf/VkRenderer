@@ -6,8 +6,6 @@
 #include "sampling.glsl"
 #include "debounce.glsl"
 
-layout (set = 0, binding = 0, rgba8) uniform image2D render;
-
 layout (local_size_x = 16, local_size_y = 16) in;
 
 Ray ray(vec3 ro, vec3 rd)
@@ -31,9 +29,9 @@ vec3 polar2cartesian(float theta, float phi)
 
 void initRays(vec2 uv, out Ray ray, out vec3 planePos)
 {
-	ray.ro = cameraPos;
-	vec3 right = cam.right;
-	vec3 up = qMulVec(UP, createRotation(right, cam.up.x));
+	ray.ro = Cam.pos;
+	vec3 right = Cam.right;
+	vec3 up = qMulVec(UP, createRotation(right, Cam.up.x));
 	vec3 fw = cross(right, up);
 	planePos = (ray.ro + fw + (right * uv.x + up * uv.y));
 	ray.rd = normalize(planePos - ray.ro);
@@ -62,8 +60,6 @@ void main()
 	Ray mainRay;
 	pixelID = gl_GlobalInvocationID.x + dim.x * gl_GlobalInvocationID.y;
 
-	cameraPos = cam.pos;
-	cameraDir = cam.fw;
 	vec3 planePos;
 	initRays(screen, mainRay, planePos);
 
@@ -85,7 +81,8 @@ void main()
 	encodeIsDone(self, false);
 	encodeBounceCount(self, 0);
 
-	bo.data[pixelID] = self;
-	ra.data[pixelID] = mainRay;
-	acc.data[pixelID] = vec4(0.0);
+	Bounces.data[pixelID] = self;
+	Rays.data[pixelID] = mainRay;
+	Accum.data[pixelID] = vec4(0.0);
+	// imageStore(render, ivec2(gl_GlobalInvocationID.xy), vec4(Globals.time));
 }

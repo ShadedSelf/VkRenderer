@@ -1,3 +1,4 @@
+#include <Common.hpp>
 
 //-------
 //	Pub
@@ -65,7 +66,6 @@ void ComputePipeline::CreateComputePipe(const char *shader)
 	vkDestroyShaderModule(init->device, computeShader, nullptr);
 }
 
-#define GROUP_THREAD_COUNT 16
 void ComputePipeline::CreateCmdBuff()
 {
 	cmdBuff = new VkCommandBuffer;

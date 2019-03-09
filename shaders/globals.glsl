@@ -6,8 +6,8 @@
 	#define Epsilon 0.00001
 	// #define Epsilon 0.001
 
-	#define time ubo.ubotime
-	#define frame ubo.uboframe
+	#define iTime globals.time
+	#define iFrame globals.frame
 
 	#define RIGHT	vec3(1.0, 0.0, 0.0)
 	#define UP		vec3(0.0, 1.0, 0.0)
@@ -38,39 +38,36 @@
 		return uintBitsToFloat(tmp) - 1.0;
 	}
 
+	layout (set = 0, binding = 0, rgba8) uniform image2D render;
 
-	layout(set = 1, binding = 0) uniform UBO
+	layout(set = 0, binding = 1) uniform gg
 	{
-		float ubotime;
-		uint uboframe;
-		uint t0;
-	} ubo;
+		float time;
+		uint frame;
+	} Globals;
 
-	layout(set = 1, binding = 1) uniform CamData
+	layout(set = 0, binding = 2) uniform cc
 	{
 		vec3 pos;
 		vec3 fw;
 		vec3 right;
 		vec3 up;
-	} cam;
+	} Cam;
 
-	layout(set = 2, binding = 0) buffer Accum
+	layout(set = 0, binding = 3) buffer aa
 	{
 		vec4 data[];
-	} acc;
+	} Accum;
 
-	layout(set = 2, binding = 1) buffer Bo
+	layout(set = 0, binding = 4) buffer bb
 	{
 		Bounce data[];
-	} bo;
+	} Bounces;
 
-	layout(set = 2, binding = 2) buffer Ra
+	layout(set = 0, binding = 5) buffer rr
 	{
 		Ray data[];
-	} ra;
-
-	vec3 cameraPos;
-	vec3 cameraDir;
+	} Rays;
 
 	int sphereNum;
 	Sphere Spheres[8];

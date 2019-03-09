@@ -20,16 +20,6 @@ int LoadShader(char **buff, const char *path)
 	return fsize;
 }
 
-vk::ShaderModule GetShaderModule(vk::Device device, const char *path)
-{
-    char *code;
-	size_t size = LoadShader(&code, path);
-    vk::ShaderModuleCreateInfo moduleCreateInfo({}, size, (uint32_t*)code);
-	vk::ShaderModule module = device.createShaderModule(moduleCreateInfo, nullptr, {});
-	delete[] code;
-	return module;
-}
-
 VkShaderModule GetShaderModule(VkDevice device, const char *path)
 {
     char *code;

@@ -4,20 +4,38 @@
 #include <cmath>
 #include <algorithm>
 
+struct float3_raw
+{
+	float x, y, z, w;
+};
+
 class float3
 {
-public:
-	float x, y, z, w;
-	float3()
-	{
-		x = y = z = 0.0f;
-	}
-	float3(float a, float b, float c)
-	{
-		x = a;
-		y = b;
-		z = c;
-	}
+	public:
+		float x, y, z, w;
+		float3()
+		{
+			x = y = z = 0.0;
+		}
+		float3(float a)
+		{
+			x = y = z = a;
+		}
+		float3(float a, float b, float c)
+		{
+			x = a;
+			y = b;
+			z = c;
+		}
+		float3_raw getRaw()
+		{
+			float3_raw res;
+			res.x = x;
+			res.y = y;
+			res.z = z;
+			res.w = w;
+			return res;
+		}
 };
 
 //------------------------------------------------------------------------
@@ -61,8 +79,7 @@ float length(float3 a)
 
 float3 normalize(float3 a)
 {
-	float l = length(a);
-	return float3(a.x / l, a.y / l, a.z / l);
+	return a / length(a);
 }
 
 float dot(float3 a, float3 b)

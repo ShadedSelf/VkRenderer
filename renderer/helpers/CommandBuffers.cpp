@@ -1,23 +1,5 @@
 #include <CommandBuffers.hpp>
 
-vk::CommandBuffer AllocateCommandBuffer(vk::Device device, vk::CommandPool cmdPool)
-{
-	vk::CommandBufferAllocateInfo allocInfo(cmdPool, {}, 1);
-
-	vk::CommandBuffer cmdBuff;
-	device.allocateCommandBuffers(&allocInfo, &cmdBuff, {});
-	return cmdBuff;
-}
-
-
-
-
-
-
-
-
-
-
 VkCommandBuffer AllocateCommandBuffer(VkDevice device, VkCommandPool cmdPool)
 {
 	VkCommandBuffer cmdBuff;

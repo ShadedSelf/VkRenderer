@@ -164,7 +164,7 @@ void GraphicsPipeline::CreateGraphicsPipe(const char *vertexShaderPath, const ch
 void GraphicsPipeline::CreateCommandBuffers()
 {
 	cmdBuffers = new VkCommandBuffer[swapchainImageCount];
-	for (int i = 0; i < swapchainImageCount; ++i)
+	for (uint32_t i = 0; i < swapchainImageCount; ++i)
 	{
 		cmdBuffers[i] = AllocateCommandBuffer(init->device, init->cmdPool);
 
