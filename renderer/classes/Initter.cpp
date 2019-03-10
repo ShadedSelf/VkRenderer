@@ -1,3 +1,23 @@
+
+//-----
+// Pub
+//-----
+
+void Initter::SetWindowTitle(const char *s, ...)
+{
+	char *c = new char[999999]; // Fix this
+
+    va_list argptr;
+    va_start(argptr, s);
+    	vsprintf(c, s, argptr);
+		glfwSetWindowTitle(screen.window, c);
+    va_end(argptr);
+	delete[] c;
+}
+
+//-----
+// Priv
+//-----
 void Initter::InitInstance()
 {
     uint32_t extensionCount;

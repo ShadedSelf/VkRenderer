@@ -44,6 +44,8 @@ class Initter
             InitCmdPool();
             InitSurface();
         }
+
+		void SetWindowTitle(const char *s, ...);
 };
 
 #include <Initter.cpp>

@@ -16,26 +16,14 @@ Ray ray(vec3 ro, vec3 rd)
 	return res;
 }
 
-vec3 polar2cartesian(float theta, float phi)
-{
-	float xtheta = cos(theta);
-	float ytheta = sin(theta);
-
-	float xphi = cos(phi);
-	float yphi = sin(phi);
-
-	return vec3(xtheta * xphi, ytheta * yphi, yphi);
-}
-
 void initRays(vec2 uv, out Ray ray, out vec3 planePos)
 {
 	ray.ro = Cam.pos;
 	vec3 right = Cam.right;
-	vec3 up = qMulVec(UP, createRotation(right, Cam.up.x));
-	vec3 fw = cross(right, up);
+	vec3 up = Cam.up;
+	vec3 fw = Cam.fw;
 	planePos = (ray.ro + fw + (right * uv.x + up * uv.y));
 	ray.rd = normalize(planePos - ray.ro);
-
 
 	// ray.ro = cam.pos;
 	// vec3 right = cam.right;

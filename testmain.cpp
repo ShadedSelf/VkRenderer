@@ -17,8 +17,8 @@ struct Globals
 {
 	float time;
 	uint32_t frame;
+	float deltaTime;
 	uint32_t pad0;
-	uint32_t pad1;
 };
 
 int main()
@@ -52,20 +52,22 @@ int main()
     computePipe.BindBuffers(&computeBuffers);
     computePipe.Create("obs/comp.spv");
     
-	Camera cam;
+	Camera cam = Camera(&init, float3(-1, 2, -5));
 
     drawer.SetPipeCmdBuffers(graphicsPipe.cmdBuffers);
 	Globals globals = {};
     while (!glfwGetKey(init.screen.window, GLFW_KEY_ESCAPE))
     {
         glfwPollEvents();
+		init.SetWindowTitle("asd");
 		
-		CamData camData = cam.Get();
-		computeBuffers.GetBuffer("Cam")->SetData(&camData);
-
-		if (globals.frame == 0)
+		if (globals.frame == 0 || cam.Update(0.1, 0.5, 0.1))
+		{
+			CamData camData = cam.Get();
+			computeBuffers.GetBuffer("Cam")->SetData(&camData);
 			setPipe.Dispatch(true);
-		for (uint32_t i = 0; i < 4; i++)
+		}
+		for (uint32_t i = 0; i < 2; i++)
 		{
 			computeBuffers.GetBuffer("Globals")->SetData(&globals);
 			computePipe.Dispatch(true);

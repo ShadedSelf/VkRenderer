@@ -35,6 +35,7 @@ class Buffer : public BindableObject
 	void *GetData();
 	void Map();
 	void Unmap();
+	// void MapPtr(void *ptr);
 };
 
 void Buffer::Create(VkBufferUsageFlags usage, VkMemoryPropertyFlags properties)
