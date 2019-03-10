@@ -151,8 +151,8 @@ float3 nanToZero(float3 a)
 	return float3
 	(
 		(a.x != a.x) ? 0 : a.x,
-		(a.y != a.x) ? 0 : a.y,
-		(a.z != a.x) ? 0 : a.z
+		(a.y != a.y) ? 0 : a.y,
+		(a.z != a.z) ? 0 : a.z
 	);
 }
 

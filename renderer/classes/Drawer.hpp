@@ -16,6 +16,7 @@ class Drawer
 {
     private:
 		void CreateSwapchain();
+		void CreateSyncObjects();
 
 		Initter *init;
 
@@ -36,17 +37,7 @@ class Drawer
 			this->init = init;
 
 			CreateSwapchain();
-
-			VkSemaphoreCreateInfo semaphoreInfo = {};
-			semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-			vkCreateSemaphore(init->device, &semaphoreInfo, nullptr, &imageAvailable);
-			vkCreateSemaphore(init->device, &semaphoreInfo, nullptr, &renderingDone);
-
-			VkFenceCreateInfo fenceInfo = {};
-			fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-			fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-			vkCreateFence(init->device, &fenceInfo, nullptr, &fence);
-			vkResetFences(init->device, 1, &fence);
+			CreateSyncObjects();
 		}
 
 		void SetPipeCmdBuffers(VkCommandBuffer *cmdBuffers)

@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <chrono>
 
 #include <Initter.hpp>
 #include <Drawer.hpp>
@@ -17,8 +18,8 @@ struct Globals
 {
 	float time;
 	uint32_t frame;
-	float deltaTime;
 	uint32_t pad0;
+	uint32_t pad1;
 };
 
 int main()
@@ -56,14 +57,21 @@ int main()
 
     drawer.SetPipeCmdBuffers(graphicsPipe.cmdBuffers);
 	Globals globals = {};
+			
+	std::chrono::high_resolution_clock timer;
+	auto prevTime = timer.now();
     while (!glfwGetKey(init.screen.window, GLFW_KEY_ESCAPE))
     {
+		auto currTime = timer.now();
+		using ms = std::chrono::duration<float, std::milli>;
+		float deltaTime = std::chrono::duration_cast<ms>(currTime - prevTime).count();
+
         glfwPollEvents();
-		init.SetWindowTitle("asd");
+		init.SetWindowTitle("\t%g", 1.0 / (deltaTime / 1000.0));
 		
-		if (globals.frame == 0 || cam.Update(0.1, 0.5, 0.1))
+		if (globals.frame == 0 || cam.Update(deltaTime / 1000.0, 1.0, 10.0))
 		{
-			CamData camData = cam.Get();
+			CamData camData = cam.GetRaw();
 			computeBuffers.GetBuffer("Cam")->SetData(&camData);
 			setPipe.Dispatch(true);
 		}
@@ -74,5 +82,7 @@ int main()
 			globals.frame++;
 		}
         drawer.DrawFrame();
+
+		prevTime = currTime;
     }
 }

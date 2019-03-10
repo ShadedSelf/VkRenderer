@@ -34,14 +34,6 @@ void BindableBuffers::AddTexture(std::string name, BufferType type, u_int32_t bi
 	Add(buff, name, type, binding);
 }
 
-Buffer *BindableBuffers::GetBuffer(std::string name)
-{
-	for (uint32_t i = 0; i < buffers.size(); i++) 
-		if (buffers[i]->name == name && buffers[i]->buffer)
-			return static_cast<Buffer *>(buffers[i].get());
-	return nullptr;
-}
-
 void BindableBuffers::Add(BindableObject *buff, std::string name, BufferType type, u_int32_t binding)
 {
 	buff->dType = type;
@@ -54,6 +46,14 @@ void BindableBuffers::Add(BindableObject *buff, std::string name, BufferType typ
 		if (diffBuffers[i].type == type)
 			{ diffBuffers[i].count++; return; }
 	diffBuffers.push_back(BufferTrack(type, 1));
+}
+
+Buffer *BindableBuffers::GetBuffer(std::string name)
+{
+	for (uint32_t i = 0; i < buffers.size(); i++) 
+		if (buffers[i]->name == name && buffers[i]->buffer)
+			return static_cast<Buffer *>(buffers[i].get());
+	return nullptr;
 }
 
 void BindableBuffers::CreateDescriptors(std::vector<VkDescriptorSet> *dSets, std::vector<VkDescriptorSetLayout> *dSetLayouts, VkShaderStageFlagBits stage)
