@@ -4,6 +4,19 @@
 //	Pub
 //-------
 
+void ComputePipeline::FlushDescriptors()
+{
+	for(size_t i = 0; i < dSetLayouts.size(); i++)
+		vkDestroyDescriptorSetLayout(init->device, dSetLayouts[i], nullptr);
+	dSetLayouts.clear();
+	dSets.clear();
+}
+
+void ComputePipeline::BindBuffers(BindableBuffers *data)
+{
+	data->CreateDescriptors(&dSets, &dSetLayouts, VK_SHADER_STAGE_COMPUTE_BIT);
+}
+
 void ComputePipeline::Create(const char *shader)
 {
 	CreateComputePipe(shader);

@@ -36,17 +36,8 @@ class ComputePipeline
 			vkDestroyPipeline(init->device, pipeline, nullptr);
 			FlushDescriptors();			
 		}
-		void FlushDescriptors()
-		{
-			for(size_t i = 0; i < dSetLayouts.size(); i++)
-				vkDestroyDescriptorSetLayout(init->device, dSetLayouts[i], nullptr);
-			dSetLayouts.clear();
-			dSets.clear();
-		}
-		void BindBuffers(BindableBuffers *data)
-		{
-			data->CreateDescriptors(&dSets, &dSetLayouts, VK_SHADER_STAGE_COMPUTE_BIT);
-		}
+		void FlushDescriptors();
+		void BindBuffers(BindableBuffers *data);
 		void Create(const char *shader);
 		void Dispatch(bool sync);
 		void Destroy();
