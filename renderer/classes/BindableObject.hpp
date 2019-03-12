@@ -19,6 +19,9 @@ class BindableObject
         std::string name;
 		uint32_t binding;
 
+		BindableObject(){}
+		virtual ~BindableObject(){}
+
         uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties, VkPhysicalDevice gpu);
 };
 

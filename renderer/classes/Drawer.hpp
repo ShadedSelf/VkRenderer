@@ -31,13 +31,19 @@ class Drawer
 		uint32_t swapchainImageCount;
     	SwapchainBuffer *swapchainBuffers;
 
-		Drawer(){}
 		Drawer(Initter *init)
 		{
 			this->init = init;
 
 			CreateSwapchain();
 			CreateSyncObjects();
+		}
+		~Drawer()
+		{
+			vkDestroySemaphore(init->device, imageAvailable, nullptr);
+			vkDestroySemaphore(init->device, renderingDone, nullptr);
+			vkDestroyFence(init->device, fence, nullptr);
+			vkDestroySwapchainKHR(init->device, swapchain, nullptr);
 		}
 
 		void SetPipeCmdBuffers(VkCommandBuffer *cmdBuffers)

@@ -29,6 +29,20 @@ class ComputePipeline
 		{
 			this->init = init;
 		}
+		~ComputePipeline()
+		{
+			vkDestroyFence(init->device, fence, nullptr);
+			vkDestroyPipelineLayout(init->device, pipeLayout, nullptr);
+			vkDestroyPipeline(init->device, pipeline, nullptr);
+			FlushDescriptors();			
+		}
+		void FlushDescriptors()
+		{
+			for(size_t i = 0; i < dSetLayouts.size(); i++)
+				vkDestroyDescriptorSetLayout(init->device, dSetLayouts[i], nullptr);
+			dSetLayouts.clear();
+			dSets.clear();
+		}
 		void BindBuffers(BindableBuffers *data)
 		{
 			data->CreateDescriptors(&dSets, &dSetLayouts, VK_SHADER_STAGE_COMPUTE_BIT);

@@ -4,7 +4,7 @@ export VK_INSTANCE_LAYERS = VK_LAYER_LUNARG_standard_validation
 
 NAME = main
 
-INC = -I ${VK_SDK}/macos/include -I ./glfw/include -I ./glfw/deps -I ./renderer/helpers -I ./renderer/classes -I ./vectors -I ./camera
+INC = -I ${VK_SDK}/macos/include -I ./glfw/include -I ./glfw/deps -I ./renderer/helpers -I ./renderer/classes -I ./vectors -I ./camera -I ./io
 SHADERS = ./shaders
 CC = g++-8 -std=c++17
 OB = ./obs

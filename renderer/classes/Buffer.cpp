@@ -2,6 +2,19 @@
 // Pub
 //-----
 
+Buffer Buffer::GetCopy()
+{
+	Buffer tmpBuff = Buffer(init, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	VkCommandBuffer tmpCmdBuff = BeginTemporaryCmdBuffer(init->device, init->cmdPool);
+		VkBufferCopy region = {};
+		region.dstOffset = 0;
+		region.srcOffset = 0;
+		region.size = size;
+		vkCmdCopyBuffer(tmpCmdBuff, buff, tmpBuff.buff, 1, &region);
+	EndTemporaryCmdBuffer(init->device, init->cmdPool, init->queue, tmpCmdBuff);
+	return tmpBuff;
+}
+
 void *Buffer::GetData()
 {
 	return data;

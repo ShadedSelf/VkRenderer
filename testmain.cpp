@@ -7,6 +7,8 @@
 #include <iostream>
 #include <chrono>
 
+#include <io.hpp>
+
 #include <Initter.hpp>
 #include <Drawer.hpp>
 #include <BindableBuffers.hpp>
@@ -18,7 +20,7 @@ struct Globals
 {
 	float time;
 	uint32_t frame;
-	uint32_t pad0;
+	uint32_t rFrame;
 	uint32_t pad1;
 };
 
@@ -28,6 +30,7 @@ int main()
     Initter init = Initter(800, 800);
     Drawer drawer = Drawer(&init);
 
+	// @TODO: manage destruction of shared buffers 
 	RenderTexture tex = RenderTexture(&init, 800, 800, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
 	
 	BindableBuffers graphicsBuffers = BindableBuffers(&init);
@@ -71,6 +74,7 @@ int main()
 		
 		if (globals.frame == 0 || cam.Update(deltaTime / 1000.0, 1.0, 10.0))
 		{
+			globals.rFrame = 0;
 			CamData camData = cam.GetRaw();
 			computeBuffers.GetBuffer("Cam")->SetData(&camData);
 			setPipe.Dispatch(true);
@@ -80,9 +84,19 @@ int main()
 			computeBuffers.GetBuffer("Globals")->SetData(&globals);
 			computePipe.Dispatch(true);
 			globals.frame++;
+			globals.rFrame++;
 		}
         drawer.DrawFrame();
 
+		if (glfwGetKey(init.screen.window, GLFW_KEY_HOME))
+		{
+			Buffer screen = computeBuffers.GetBuffer("Accum")->GetCopy();
+			screen.Map();
+				io::WriteBufferToPng("./test.png", screen.GetData(), 800, 800);
+			screen.Unmap();
+		}
+
 		prevTime = currTime;
     }
+	exit(0);
 }

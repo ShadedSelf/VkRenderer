@@ -1,4 +1,10 @@
 
+void BindableBuffers::Flush()
+{
+	buffers.clear();
+	diffBuffers.clear();
+}
+
 void BindableBuffers::AddBuffer(std::string name, uint32_t size, BufferType type, u_int32_t binding, bool map, bool deviceOnly)
 {
 	VkMemoryPropertyFlags pFlags;
@@ -9,9 +15,9 @@ void BindableBuffers::AddBuffer(std::string name, uint32_t size, BufferType type
 		
 	VkBufferUsageFlags uFlags;
 	if (type == UniformBuffer)
-		uFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+		uFlags = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 	else
-		uFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+		uFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
 
 	Buffer *buff = new Buffer(init, size, uFlags, pFlags);
 	buff->buffer = true;
@@ -40,7 +46,7 @@ void BindableBuffers::Add(BindableObject *buff, std::string name, BufferType typ
 	buff->name = name;
 	buff->binding = binding;
 
-	buffers.push_back(std::shared_ptr<BindableObject>(buff));
+	buffers.push_back(std::unique_ptr<BindableObject>(buff));
 
 	for (uint32_t i = 0; i < diffBuffers.size(); i++)
 		if (diffBuffers[i].type == type)

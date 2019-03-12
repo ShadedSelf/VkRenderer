@@ -18,12 +18,12 @@ struct BufferTrack
 		this->count = count;
 	}
 };
-
+#include <cstdio>
 class BindableBuffers
 {
 	private:
 		Initter *init;
-		std::vector<std::shared_ptr<BindableObject>> buffers;
+		std::vector<std::unique_ptr<BindableObject>> buffers;
 		std::vector<BufferTrack> diffBuffers;
 
 		void Add(BindableObject *buff, std::string name, BufferType type, u_int32_t binding);
@@ -33,7 +33,11 @@ class BindableBuffers
 		{
 			this->init = init;
 		}
-
+		~BindableBuffers()
+		{
+			Flush();
+		}
+		void Flush();
 		void AddBuffer(std::string name, uint32_t size, BufferType type, u_int32_t binding, bool map, bool deviceOnly);
 		void AddTexture(std::string name, uint32_t width, u_int32_t height, BufferType type, u_int32_t binding);
 		void AddTexture(std::string name, BufferType type, u_int32_t binding, RenderTexture tex);

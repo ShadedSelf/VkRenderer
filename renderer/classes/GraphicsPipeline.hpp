@@ -32,7 +32,23 @@ class GraphicsPipeline
 	{
 		this->init = init;
 	}
-
+	~GraphicsPipeline()
+	{
+		vkDestroyRenderPass(init->device, renderPass, nullptr);
+		for	(uint32_t i = 0; i < swapchainImageCount; i++)
+			vkDestroyFramebuffer(init->device, frameBuffers[i], nullptr);
+		delete[] frameBuffers;
+		vkDestroyPipelineLayout(init->device, pipeLayout, nullptr);
+		vkDestroyPipeline(init->device, pipe, nullptr);
+		FlushDescriptors();			
+	}
+	void FlushDescriptors()
+	{
+		for(size_t i = 0; i < dSetLayouts.size(); i++)
+			vkDestroyDescriptorSetLayout(init->device, dSetLayouts[i], nullptr);
+		dSetLayouts.clear();
+		dSets.clear();
+	}
 	void BindBuffers(BindableBuffers *data)
 	{
 		data->CreateDescriptors(&dSets, &dSetLayouts, VK_SHADER_STAGE_ALL_GRAPHICS);
