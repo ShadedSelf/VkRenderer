@@ -42,7 +42,7 @@ void init04()
 
 }
 
-void init()
+void initasds()
 {
 	quadricNum = 0;
 	Quadrics[0].matrix =
@@ -191,7 +191,7 @@ void init()
 
 
 
-void init1()
+void init()
 {
 
 	sphereNum = 1;

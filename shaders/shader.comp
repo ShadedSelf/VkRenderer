@@ -268,9 +268,12 @@ void main()
 	iSeed = pixelID * 2000 * 2000 * (Globals.frame + 1);
 	Bounce self = Bounces.data[pixelID];
 
+	// if (decodeBounceCount(self) == 98765)
+	// 	return;
+
 
 	mainRay = decodeRay(self);
-	// iSeed = decodeFrame(self);
+	iSeed = decodeFrame(self);
 
 	Hit hit;
 	vec3 lum = decodeColor(self);
@@ -303,7 +306,10 @@ void main()
 			end = true;
 	}
 	else
+	{
+		//final = vec3(saturate(dot(decodeRay(self).rd, normalize(ONE)) * 0.5 + 0.5));
 		end = true;
+	}
 
 	if (end)
 	{
@@ -311,8 +317,8 @@ void main()
 		encodeFrame(self, decodeFrame(self) + 1);
 
 		vec3 col = Accum.data[pixelID].xyz;
-		Accum.data[pixelID] = vec4(mix(col, final, 1.0 / float(decodeFrame(self))), 1.0);
-		// acc.data[pixelID] = vec4(mix(col, final, 0.05), 1.0);
+		// Accum.data[pixelID] = vec4(mix(col, final, 1.0 / float(decodeFrame(self))), 1.0);
+		Accum.data[pixelID] = vec4(mix(col, final, 0.05), 1.0);
 
 		encodeColor(self, ONE);
 		encodeBounceCount(self, 0);
@@ -323,8 +329,10 @@ void main()
 		encodeRay(self, tmp);
 	}
 
+	// if (end && Globals.rFrame == 0)
+	// 	encodeBounceCount(self, 98765);
+
 	Bounces.data[pixelID] = self;
 	imageStore(render, ivec2(gl_GlobalInvocationID.xy), Accum.data[pixelID]);
-	// imageStore(render, ivec2(gl_GlobalInvocationID.xy), vec4(Globals.frame) * 0.01);
 	// imageStore(render, ivec2(gl_GlobalInvocationID.xy), vec4(float(decodeFrame(self)) / float(frame)));
 }

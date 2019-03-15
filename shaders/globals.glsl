@@ -44,6 +44,7 @@
 	{
 		float time;
 		uint frame;
+		uint rFrame;
 	} Globals;
 
 	layout(set = 0, binding = 2) uniform cc

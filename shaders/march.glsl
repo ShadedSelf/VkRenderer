@@ -5,17 +5,18 @@
 
 
 vec3 _PreRotVec = normalize(UP + FW * 3.1);
-float _PreRotAngle = 14.0;
-vec3 _PostRotVec = RIGHT - UP*0.4;
-float _PostRotAngle = 0.0;
+float _PreRotAngle = 4.0;
 
-uint _Iterations = 10;
+vec3 _PostRotVec = -RIGHT - UP*0.4;
+float _PostRotAngle = -0.5;
+
+uint _Iterations = 40;
 
 // vec3 _OffSet = vec3(1.4, 0.61, 0.0);
-vec3 _OffSet = vec3(1.0, 0.61, 0.0);
+vec3 _OffSet = vec3(1.2, 0.51, 0.0);
 
 float _Scale = 2.0;
-float _Rad = 0.5;
+float _Rad = 0.1;
 
 vec4 folds[6];
 int numFolds;
@@ -168,18 +169,18 @@ float map(vec3 p)
 	// vec3 f = abs(p - FW * 2.0) - vec3(0.5, 0.5, 0.5);
 	// return min(max(f.x, max(f.y, f.z)), 0) + length(max(f, 0));
 
-	float a = boxrep(p);
-	float b = mob(p);
-	float c = boxreps(p);
+	// float a = boxrep(p);
+	// float b = mob(p);
+	// float c = boxreps(p);
 	
-	float o = max(b, -a);
-	// testbool = c < o;
-	// return o;
-    // return b;
-	float m = min(min(o, c), ballreps(p));
-	return m;
-    float f = min(m, fraction((p / 3.0) - UP * 1.0 + RIGHT * 2.0 + FW*3.0));
-    return f;
+	// float o = max(b, -a);
+	// // testbool = c < o;
+	// // return o;
+    // // return b;
+	// float m = min(min(o, c), ballreps(p));
+	// return m;
+    // float f = min(m, fraction((p / 3.0) - UP * 1.0 + RIGHT * 2.0 + FW*3.0));
+    // return f;
 
 	return fraction(p);
 }
@@ -199,12 +200,13 @@ bool raymarch(Ray ray, float drawDist, out float lt)
 	float t = 0;
 	float d = 100;
 	drawDist = min(drawDist, 25.0);
-	for (int i = 0; i < 300 && d > Epsilon && t < drawDist; i++)
+	for (int i = 0; i < 200 && d > /*Epsilon/*/0.00001 && t < drawDist; i++)
 	{
 		d = map(ray.ro + ray.rd * t);
 		insidebool = d < 0.0;
 		d = abs(d);
-		t += d * 0.9;
+		t += d;
+		// t += d * 0.9;
 	}
 	lt = t;
 	return (t < drawDist);

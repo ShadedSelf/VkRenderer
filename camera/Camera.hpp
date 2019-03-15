@@ -20,6 +20,8 @@ class Camera
 		float theta = 0;
 		float phi = 0;
 
+		bool locked = false;
+
 	public:
 			float3 pos;
 			float3 fw = FW;
@@ -33,7 +35,8 @@ class Camera
 
 			glfwGetCursorPos(init->screen.window, &xPrev, &yPrev);
 		}
-
+		void Lock();
+		void Unlock();
 		bool Update(float deltaTime, float mMult, float kMult);
 		CamData GetRaw();
 };

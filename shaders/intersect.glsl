@@ -127,28 +127,28 @@ float intersect(Ray ray, out Hit hit)
 		}
 	}
 
-{
-	Cube cube = Cubes[7];
-	tRay = transformRay(ray, cube.trs);
+// {
+// 	Cube cube = Cubes[7];
+// 	tRay = transformRay(ray, cube.trs);
 
-	vec2 form = iCube(tRay.ro, tRay.rd, ZERO, cube.size);
-	vec2 cutter = iSphere(tRay.ro, tRay.rd, vec4(ZERO, 1.2));
+// 	vec2 form = iCube(tRay.ro, tRay.rd, ZERO, cube.size);
+// 	vec2 cutter = iSphere(tRay.ro, tRay.rd, vec4(ZERO, 1.2));
 
-	vec3 formN = nCube(tRay.ro + tRay.rd * form.x, ZERO, cube.size) * sign(form.y);
+// 	vec3 formN = nCube(tRay.ro + tRay.rd * form.x, ZERO, cube.size) * sign(form.y);
 
-	vec3 cutterInN = nSphere(tRay.ro + tRay.rd * cutter.y, ZERO);
-	vec3 cutterOutN = nSphere(tRay.ro + tRay.rd * cutter.x, ZERO);
+// 	vec3 cutterInN = nSphere(tRay.ro + tRay.rd * cutter.y, ZERO);
+// 	vec3 cutterOutN = nSphere(tRay.ro + tRay.rd * cutter.x, ZERO);
 
-	vec3 cutN;
-	vec2 h = cut(form, cutter, formN, cutterInN, cutterOutN, cutN);
-	if (h.x > Epsilon && h.x < t)
-	{
-		t = h.x;
-		hit.normal = qMulVec(cutN, qConjugate(cube.trs.rot));
-		hit.inside = (sign(h.y) < 0);
-		hit.mat = cube.mat;
-	}
-}
+// 	vec3 cutN;
+// 	vec2 h = cut(form, cutter, formN, cutterInN, cutterOutN, cutN);
+// 	if (h.x > Epsilon && h.x < t)
+// 	{
+// 		t = h.x;
+// 		hit.normal = qMulVec(cutN, qConjugate(cube.trs.rot));
+// 		hit.inside = (sign(h.y) < 0);
+// 		hit.mat = cube.mat;
+// 	}
+// }
 
 
 

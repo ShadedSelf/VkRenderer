@@ -1,6 +1,9 @@
 
 bool Camera::Update(float deltaTime, float mMult, float kMult)
 {
+	if (locked)
+		return false;
+
 	double xPos, yPos;
 	glfwGetCursorPos(init->screen.window, &xPos, &yPos);
 	
@@ -51,4 +54,14 @@ CamData Camera::GetRaw()
 	res.right = right.getRaw();
 	res.up    = up.getRaw();
 	return res;
+}
+
+void Camera::Lock()
+{
+	locked = true;
+}
+
+void Camera::Unlock()
+{
+	locked = false;
 }
